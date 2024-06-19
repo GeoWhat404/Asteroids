@@ -13,13 +13,11 @@
 
 #define PLAYER_LEN 50
 #define BASE_WIDTH 35
-
-#define PLAYER_SPEED 1
+#define PLAYER_SPEED 0.5f
 #define PLAYER_TURN_SPEED 5.0f
 
-#define MAX_SHAPES 100
+#define MAX_SHAPES 500
 #define MAX_BULLETS 500
-
 #define FONT_SIZE 20
 
 typedef struct {
@@ -43,10 +41,10 @@ typedef struct {
 
 static Vector2 center_screen = (Vector2) {W_WIDTH / 2.0f, W_HEIGHT / 2.0f};
 static player_t player;
+static bool lost_game = false;
 
 static int best_slot = 0;
 static int score = 0;
-static bool lost_game = false;
 
 static int shape_count;
 static shape_t shapes[MAX_SHAPES];
@@ -183,10 +181,10 @@ void spawn_asteroid() {
             center_screen.y - new_shape.centroid.y};
 
         double dist = sqrt(direction.x * direction.x +
-                           direction.y * direction.y) / 10 + score;
+                           direction.y * direction.y) / 50;
 
-        new_shape.velocity = (Vector2){direction.x / dist,
-            direction.y / dist};
+        new_shape.velocity = (Vector2){direction.x / dist * score / 50,
+                                       direction.y / dist * score / 50};
         shapes[shape_count++] = new_shape;
     }
 }
@@ -205,7 +203,6 @@ void spawn_bullet() {
         sinf(rad) * 500,
        -cosf(rad) * 500
     };
-
     bullets[bullet_count++] = new_bullet;
 }
 
@@ -248,7 +245,6 @@ void calculate_base_vert(Vector2 top, float height, float base_width,
 
 void draw_triangle(Vector2 centroid, float angle, float height,
                    float base_width, Color color) {
-
     float half_base = base_width / 2;
 
     Vector2 top = (Vector2) {
@@ -281,7 +277,6 @@ void init() {
         .angle = 0,
         .bullets = MAX_BULLETS
     };
-
     lost_game = false;
 }
 
@@ -343,8 +338,8 @@ void input() {
 
     if (IsKeyDown(KEY_W)) {
         float rad = deg_to_rad(player.angle);
-        player.accel.x += sinf(rad) * PLAYER_SPEED;
-        player.accel.y -= cosf(rad) * PLAYER_SPEED;
+        player.accel.x += sinf(rad) * PLAYER_SPEED / 2;
+        player.accel.y -= cosf(rad) * PLAYER_SPEED / 2;
     }
 
     if (IsKeyDown(KEY_SPACE)) {
@@ -478,6 +473,12 @@ void update() {
 
 void cleanup() {
     CloseWindow();
+
+    for (int i = 0; i < shape_count; i++)
+        destroy_shape(&shapes[i]);
+
+    for (int i = 0; i < bullet_count; i++)
+        destroy_shape(&bullets[i]);
 }
 
 void mainloop() {
